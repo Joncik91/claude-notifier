@@ -85,20 +85,6 @@ function sendTelegram(text) {
   req.end();
 }
 
-function truncate(str, max = 500) {
-  if (!str) return "";
-  str = str.trim();
-  return str.length > max ? str.slice(0, max) + "..." : str;
-}
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
 // Read JSON from stdin (Claude Code hooks pipe event data here)
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -113,37 +99,29 @@ process.stdin.on("end", () => {
 
   const event = data.hook_event_name;
 
-  if (event === "Stop") {
-    const msg = data.last_assistant_message || "";
-    const preview = truncate(escapeHtml(msg), 400);
-    const text =
-      `<b>✅ Claude Code — Task Complete</b>\n\n` +
-      (preview ? `<pre>${preview}</pre>` : "<i>No message content</i>");
+  const project = data.cwd ? path.basename(data.cwd) : "";
+  const label = project ? ` · <code>${project}</code>` : "";
 
+  if (event === "Stop") {
     const fingerprint = crypto
       .createHash("md5")
-      .update("stop:" + msg.slice(0, 200))
+      .update("stop:" + project)
       .digest("hex");
     if (isDuplicate(fingerprint)) process.exit(0);
     recordSent(fingerprint);
-    sendTelegram(text);
+    sendTelegram(`✅ <b>Task complete</b>${label}`);
   } else if (event === "Notification") {
     const title = data.title || "";
     const message = data.message || "";
 
-    // Deduplicate: hash the title+message and skip if recently sent
+    // Deduplicate: hash the title+message+project and skip if recently sent
     const fingerprint = crypto
       .createHash("md5")
-      .update(title + "|" + message)
+      .update(title + "|" + message + "|" + project)
       .digest("hex");
     if (isDuplicate(fingerprint)) process.exit(0);
-
-    const text =
-      `<b>❓ Claude Code — Needs Attention</b>\n\n` +
-      (title ? `<b>${escapeHtml(title)}</b>\n` : "") +
-      escapeHtml(truncate(message, 500));
     recordSent(fingerprint);
-    sendTelegram(text);
+    sendTelegram(`❓ <b>Needs attention</b>${label}`);
   } else {
     process.exit(0); // Unknown event, ignore
   }
