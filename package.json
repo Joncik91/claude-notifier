@@ -1,0 +1,9 @@
+{
+  "name": "claude-notifier",
+  "version": "1.0.0",
+  "description": "Telegram notifications for Claude Code events (task complete, clarification needed)",
+  "main": "notify.js",
+  "scripts": {
+    "test": "node test.js"
+  }
+}
