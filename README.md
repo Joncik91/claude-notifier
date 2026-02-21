@@ -25,7 +25,7 @@ Built-in deduplication prevents notification spam — identical events are suppr
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/claude-notifier.git
+git clone https://github.com/Joncik91/claude-notifier.git
 cd claude-notifier
 ```
 
